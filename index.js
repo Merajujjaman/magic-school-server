@@ -2,6 +2,7 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
+var jwt = require('jsonwebtoken');
 require('dotenv').config()
 
 const app = express()
@@ -10,6 +11,25 @@ const port = process.env.PORT || 5000;
 //middlewares:
 app.use(cors())
 app.use(express.json())
+
+// jwt midleware : 
+const verifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: 'unauthorized access' })
+    }
+    
+    const token = authorization.split(' ')[1]
+
+    
+    jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
+        if (error) {
+            return res.status(401).send({ error: true, message: 'unauthorized access' })
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
 
 
 const uri = `mongodb+srv://${process.env.USER}:${process.env.PASS}@cluster0.zrkl84y.mongodb.net/?retryWrites=true&w=majority`;
@@ -30,6 +50,13 @@ async function run() {
     const usersCollection = client.db("magicDb").collection("users");
     const popularClassesCollection = client.db("magicDb").collection("popularClasses");
     const polularInstructorsClassesCollection = client.db("magicDb").collection("polularInstructors");
+
+    //jwt post:
+    app.post('/jwt', (req, res) => {
+        const user = req.body;
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+        res.send({ token })
+    })
 
     //popular classes and intructors api:
     app.get('/popular/classes', async(req, res) => {
