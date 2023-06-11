@@ -29,10 +29,16 @@ async function run() {
     await client.connect();
     const usersCollection = client.db("magicDb").collection("users");
     const popularClassesCollection = client.db("magicDb").collection("popularClasses");
+    const polularInstructorsClassesCollection = client.db("magicDb").collection("polularInstructors");
 
     //popular classes and intructors api:
     app.get('/popular/classes', async(req, res) => {
         const result = await popularClassesCollection.find().toArray()
+        res.send(result)
+    })
+
+    app.get('/popular/instructors', async(req, res) => {
+        const result = await polularInstructorsClassesCollection.find().toArray()
         res.send(result)
     })
     
