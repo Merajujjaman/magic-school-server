@@ -54,7 +54,7 @@ async function run() {
     //jwt post:
     app.post('/jwt', (req, res) => {
         const user = req.body;
-        const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '6h' })
         res.send({ token })
     })
 
@@ -69,7 +69,8 @@ async function run() {
         res.send(result)
     })
     
-    app.get('/users', async(req, res) => {
+    //user api:
+    app.get('/users', verifyJWT, async(req, res) => {
         const result = await usersCollection.find().toArray()
         console.log(result);
         res.send(result)
