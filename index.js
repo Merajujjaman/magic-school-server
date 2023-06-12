@@ -1,5 +1,5 @@
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
 var jwt = require('jsonwebtoken');
@@ -72,7 +72,6 @@ async function run() {
     //user api:
     app.get('/users', verifyJWT, async(req, res) => {
         const result = await usersCollection.find().toArray()
-        console.log(result);
         res.send(result)
 
     })
@@ -87,6 +86,30 @@ async function run() {
         const result = await usersCollection.insertOne(userData);
         res.send(result);
     });
+
+    //Admin's work:
+    app.patch('/users/admin/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateUser = {
+            $set: {
+                role: 'admin'
+            },
+        };
+
+        const result = await usersCollection.updateOne(filter, updateUser);
+        res.send(result)
+
+    })
+
+    app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+        const email = req.params.email;
+
+        const query = { email: email };
+        const user = await usersCollection.findOne(query)
+        const result = { admin: user?.role === 'admin' }
+        res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
