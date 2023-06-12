@@ -111,6 +111,28 @@ async function run() {
         res.send(result)
     })
 
+    // Instructor works:
+    app.patch('/users/instructor/:id', verifyJWT, async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const updateUser = {
+            $set: {
+                role: 'instructor'
+            },
+        };
+        const result = await usersCollection.updateOne(query, updateUser);
+        res.send(result)
+
+    })
+
+    app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query)
+        const result = { instructor: user?.role === 'instructor' }
+        res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
