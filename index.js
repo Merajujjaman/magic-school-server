@@ -49,6 +49,7 @@ async function run() {
     await client.connect();
     const usersCollection = client.db("magicDb").collection("users");
     const popularClassesCollection = client.db("magicDb").collection("popularClasses");
+    const classesCollection = client.db("magicDb").collection("classes");
     const polularInstructorsClassesCollection = client.db("magicDb").collection("polularInstructors");
 
     //jwt post:
@@ -132,6 +133,15 @@ async function run() {
         const result = { instructor: user?.role === 'instructor' }
         res.send(result)
     })
+
+    app.post('/instructor/classes', async(req, res) => {
+
+        const classData = req.body;
+        const result = await classesCollection.insertOne(classData)
+        res.send(result)
+    })
+
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
