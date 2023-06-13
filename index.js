@@ -1,4 +1,3 @@
-
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
@@ -48,6 +47,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         const usersCollection = client.db("magicDb").collection("users");
+        const selectClassCollection = client.db("magicDb").collection("selectClass");
         const popularClassesCollection = client.db("magicDb").collection("popularClasses");
         const classesCollection = client.db("magicDb").collection("classes");
         const polularInstructorsClassesCollection = client.db("magicDb").collection("polularInstructors");
@@ -88,6 +88,31 @@ async function run() {
             res.send(result);
         });
 
+        // sudent's actions:
+        app.post('/student/selectClass',  async(req, res) => {
+            const selectClass = req.body;
+            const query ={_id: new ObjectId(selectClass.classId)}
+            const findData = await classesCollection.findOne(query)
+            const newSeat = findData.availableSeats - 1 ;
+            const newEnrolled = findData.enrolled + 1 ;
+            const updateDoc = {
+                $set: {
+                    availableSeats: newSeat,
+                    enrolled : newEnrolled
+                },
+            };
+            const upadateClass = await classesCollection.updateOne(query, updateDoc)
+
+            const result = await selectClassCollection.insertOne(selectClass)
+            res.send(result)
+        })
+
+        app.get('/student/classes', async(req, res) => {
+            const query ={status: 'approve'}
+            const result = await classesCollection.find(query).toArray()
+            res.send(result)
+        })
+
         //Admin's work:
         app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
@@ -124,6 +149,18 @@ async function run() {
                 },
             };
             const result = await classesCollection.updateOne(filter, denyClass);
+            res.send(result)
+        })
+        app.patch('/class/feedback/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const {feedback} = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const feedbackUpdate = {
+                $set: {
+                    feedback: feedback
+                },
+            };
+            const result = await classesCollection.updateOne(filter, feedbackUpdate);
             res.send(result)
         })
 
