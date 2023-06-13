@@ -107,6 +107,12 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/student/instructor', async(req, res) => {
+            const query = {role: 'instructor'}
+            const result = await usersCollection.find(query).toArray()
+            res.send(result)
+        })
+
         app.get('/student/classes', async(req, res) => {
             const query ={status: 'approve'}
             const result = await classesCollection.find(query).toArray()
