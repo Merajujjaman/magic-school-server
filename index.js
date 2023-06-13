@@ -119,6 +119,13 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/setudent/selectedClasses', async(req, res) => {
+            const email = req.query.email;
+            const query = {studentEmail : email}
+            const result = await selectClassCollection.find(query).toArray()
+            res.send(result)
+        })
+
         //Admin's work:
         app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
