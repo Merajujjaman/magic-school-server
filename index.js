@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 var jwt = require('jsonwebtoken');
 require('dotenv').config()
+const stripe = require("stripe")(process.env.PAYMENT_SK)
 
 const app = express()
 const port = process.env.PORT || 5000;
@@ -47,6 +48,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         const usersCollection = client.db("magicDb").collection("users");
+        const paymentsCollection = client.db("magicDb").collection("payments");
         const selectClassCollection = client.db("magicDb").collection("selectClass");
         const popularClassesCollection = client.db("magicDb").collection("popularClasses");
         const classesCollection = client.db("magicDb").collection("classes");
@@ -119,6 +121,12 @@ async function run() {
             res.send(result)
         })
 
+        app.delete('/student/classes/:id', verifyJWT, async(req, res) => {
+            const id = req.params.id
+            const query ={_id: new ObjectId(id)}
+            const result = await selectClassCollection.deleteOne(query)
+            res.send(result)
+        })
         app.get('/setudent/selectedClasses', async(req, res) => {
             const email = req.query.email;
             const query = {studentEmail : email}
@@ -238,6 +246,40 @@ async function run() {
             };
             const result = await classesCollection.updateOne(query, updateDoc)
             res.send(result)
+        })
+
+        //payment api:
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100)
+            // console.log(amount);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"],
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+
+        })
+        
+        app.post('/payments', verifyJWT, async(req, res) => {
+            const paymentsData = req.body;
+            const insertedResult = await paymentsCollection.insertOne(paymentsData)
+            const query = { _id: { $in: paymentsData.cartsId.map(id => new ObjectId(id)) } }
+            const deletedResult = await selectClassCollection.deleteMany(query)
+            res.send({insertedResult, deletedResult})
+        })
+
+        app.get('/payments', async(req, res)=> {
+            const email = req.query.email
+            const query = {studentEmail : email}
+            const result = await paymentsCollection.find(query).toArray()
+            res.send(result)
+
         })
 
         // Send a ping to confirm a successful connection
